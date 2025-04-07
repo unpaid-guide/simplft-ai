@@ -15,26 +15,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogIn, UserPlus, Tag, CheckCircle, LockKeyhole } from "lucide-react";
+import { LogIn, UserPlus, Tag, CheckCircle, LockKeyhole, AlertCircle } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 // Login form schema
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  username: z.string().min(1, "Email/Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
 // Registration form schema
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(1, "Name is required"),
   company: z.string().optional(),
-  role: z.enum(["customer", "sales", "finance", "admin"], {
-    required_error: "Please select a role",
-  }),
+  phone: z.string().optional(),
 });
 
 export default function AuthPage() {
@@ -51,17 +49,19 @@ export default function AuthPage() {
   });
 
   // Registration form
-  const registerForm = useForm({
+  const registerForm = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
       email: "",
       password: "",
       name: "",
       company: "",
-      role: "customer",
+      phone: "",
     },
   });
+  
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
 
   // Handle login submission
   const onLoginSubmit = (values: z.infer<typeof loginSchema>) => {
@@ -69,8 +69,21 @@ export default function AuthPage() {
   };
 
   // Handle registration submission
-  const onRegisterSubmit = (values: z.infer<typeof registerSchema>) => {
-    registerMutation.mutate(values);
+  const onRegisterSubmit = async (values: z.infer<typeof registerSchema>) => {
+    try {
+      setRegistrationError(null);
+      const response = await apiRequest("POST", "/api/register", values);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setRegistrationSuccess(true);
+      } else {
+        const errorData = await response.json();
+        setRegistrationError(errorData.message || "Registration failed. Please try again.");
+      }
+    } catch (error) {
+      setRegistrationError("An unexpected error occurred. Please try again.");
+    }
   };
 
   // Redirect if user is already logged in
@@ -159,30 +172,61 @@ export default function AuthPage() {
               {/* Registration Form */}
               <TabsContent value="register">
                 <div className="mt-4">
-                  <Form {...registerForm}>
-                    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                      <FormField
-                        control={registerForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter your full name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
+                  {registrationSuccess ? (
+                    <Alert className="bg-green-50 text-green-800 border-green-200">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <AlertTitle className="text-green-800 font-semibold">Registration Successful!</AlertTitle>
+                      <AlertDescription>
+                        Your account has been created but is pending approval by an administrator. 
+                        You'll be notified by email when your account is approved.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <Form {...registerForm}>
+                      <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                        {registrationError && (
+                          <Alert className="bg-red-50 text-red-800 border-red-200">
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                            <AlertDescription className="text-red-800">{registrationError}</AlertDescription>
+                          </Alert>
                         )}
-                      />
-                      <div className="grid grid-cols-2 gap-4">
+                        
                         <FormField
                           control={registerForm.control}
-                          name="username"
+                          name="name"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Username</FormLabel>
+                              <FormLabel>Full Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Choose a username" {...field} />
+                                <Input placeholder="Enter your full name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="grid grid-cols-1 gap-4">
+                          <FormField
+                            control={registerForm.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                  <Input type="email" placeholder="Enter your email" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <FormField
+                          control={registerForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Password</FormLabel>
+                              <FormControl>
+                                <Input type="password" placeholder="Create a password" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -190,79 +234,47 @@ export default function AuthPage() {
                         />
                         <FormField
                           control={registerForm.control}
-                          name="email"
+                          name="company"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Email</FormLabel>
+                              <FormLabel>Company (Optional)</FormLabel>
                               <FormControl>
-                                <Input type="email" placeholder="Enter your email" {...field} />
+                                <Input placeholder="Enter your company name" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                      </div>
-                      <FormField
-                        control={registerForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="Create a password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="company"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Company (Optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter your company name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={registerForm.control}
-                        name="role"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Role</FormLabel>
-                            <select
-                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              {...field}
-                            >
-                              <option value="customer">Customer</option>
-                              <option value="sales">Sales Team</option>
-                              <option value="finance">Finance Team</option>
-                              <option value="admin">Administrator</option>
-                            </select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
-                        disabled={registerMutation.isPending}
-                      >
-                        {registerMutation.isPending ? (
-                          "Creating Account..."
-                        ) : (
-                          <>
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            Create Account
-                          </>
-                        )}
-                      </Button>
-                    </form>
-                  </Form>
+                        <FormField
+                          control={registerForm.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone Number (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your phone number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button 
+                          type="submit" 
+                          className="w-full"
+                          disabled={registerForm.formState.isSubmitting}
+                        >
+                          {registerForm.formState.isSubmitting ? (
+                            "Creating Account..."
+                          ) : (
+                            <>
+                              <UserPlus className="mr-2 h-4 w-4" />
+                              Create Account
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>

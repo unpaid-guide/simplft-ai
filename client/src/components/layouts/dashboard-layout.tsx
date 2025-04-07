@@ -26,8 +26,8 @@ const navItems: NavItem[] = [
     roles: ["admin", "sales", "finance", "customer"]
   },
   { 
-    label: "Users", 
-    href: "/users", 
+    label: "User Management", 
+    href: "/user-management", 
     icon: <Users className="mr-3 h-4 w-4" />,
     roles: ["admin"]
   },

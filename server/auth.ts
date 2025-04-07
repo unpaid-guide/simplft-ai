@@ -51,10 +51,29 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false, { message: "Invalid username or password" });
+        // First try finding user by username
+        let user = await storage.getUserByUsername(username);
+        
+        // If not found, try by email (allowing login with email)
+        if (!user) {
+          user = await storage.getUserByEmail(username);
         }
+        
+        // If user not found or password doesn't match
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false, { message: "Invalid email/username or password" });
+        }
+        
+        // Check if user account is pending approval
+        if (user.status === 'pending') {
+          return done(null, false, { message: "Your account is pending approval by an administrator" });
+        }
+        
+        // Check if user account is suspended
+        if (user.status === 'suspended') {
+          return done(null, false, { message: "Your account has been suspended. Please contact an administrator" });
+        }
+        
         return done(null, user);
       } catch (error) {
         return done(error);
@@ -79,12 +98,15 @@ export function setupAuth(app: Express) {
   app.post("/api/register", async (req, res, next) => {
     try {
       // Validate the request
-      const { username, email, password, name, company, role } = req.body;
+      const { email, password, name, company, phone } = req.body;
+      
+      // Generate a username based on email (e.g., part before @)
+      const username = email.split('@')[0] + Math.floor(Math.random() * 1000);
       
       // Check if user already exists
       const existingUsername = await storage.getUserByUsername(username);
       if (existingUsername) {
-        return res.status(400).json({ message: "Username already exists" });
+        return res.status(400).json({ message: "Username already exists. Please try again." });
       }
 
       const existingEmail = await storage.getUserByEmail(email);
@@ -92,34 +114,51 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email already exists" });
       }
 
-      // Only allow admin to create admin/finance roles
-      if ((role === 'admin' || role === 'finance') && (!req.user || req.user.role !== 'admin')) {
-        return res.status(403).json({ message: "Not authorized to create this role" });
-      }
+      // If admin is creating the user (internal user)
+      if (req.user && req.user.role === 'admin') {
+        const { role } = req.body;
+        
+        // Create the user with hashed password, no approval needed
+        const hashedPassword = await hashPassword(password);
+        const userData: InsertUser = {
+          username,
+          email,
+          password: hashedPassword,
+          name,
+          role: role || 'customer',  // Admin can specify any role
+          company,
+          status: 'active',
+          phone
+        };
 
-      // Create the user with hashed password
-      const hashedPassword = await hashPassword(password);
-      const userData: InsertUser = {
-        username,
-        email,
-        password: hashedPassword,
-        name,
-        role: role || 'customer',
-        company
-      };
-
-      const newUser = await storage.createUser(userData);
-      const userWithoutPassword = { ...newUser, password: undefined };
-
-      // Log the user in if they're registering themselves
-      if (!req.user) {
-        req.login(newUser, (err) => {
-          if (err) return next(err);
-          res.status(201).json(userWithoutPassword);
-        });
-      } else {
-        // If an admin is creating a user, don't log them in
+        const newUser = await storage.createUser(userData);
+        const userWithoutPassword = { ...newUser, password: undefined };
+        
+        // Admin is creating a user, don't log them in
         res.status(201).json(userWithoutPassword);
+      } 
+      // Self-registration (customer or partner) that needs approval
+      else {
+        // Create the user with hashed password and pending status
+        const hashedPassword = await hashPassword(password);
+        const userData: InsertUser = {
+          username,
+          email,
+          password: hashedPassword,
+          name,
+          role: 'customer',  // Default role for self-registration
+          company,
+          status: 'pending', // Pending admin approval
+          phone
+        };
+
+        const newUser = await storage.createUser(userData);
+        
+        // Don't immediately log in the user since they need approval
+        res.status(201).json({ 
+          message: "Registration successful. Your account is pending approval by an administrator.",
+          user: { ...newUser, password: undefined }
+        });
       }
     } catch (error) {
       next(error);
@@ -161,6 +200,114 @@ export function setupAuth(app: Express) {
     // Don't send the hashed password to the client
     const userWithoutPassword = { ...req.user, password: undefined };
     res.json(userWithoutPassword);
+  });
+  
+  // Additional user management routes for admins
+  
+  // Get all users - admin only  
+  app.get("/api/users", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const users = await storage.listUsers();
+      
+      // Don't send passwords
+      const sanitizedUsers = users.map(user => ({
+        ...user,
+        password: undefined
+      }));
+      
+      res.json(sanitizedUsers);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Get all pending user registrations
+  app.get("/api/users/pending", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const pendingUsers = await storage.getUsersByStatus('pending');
+      
+      // Don't send passwords
+      const sanitizedUsers = pendingUsers.map(user => ({
+        ...user,
+        password: undefined
+      }));
+      
+      res.json(sanitizedUsers);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Approve a pending user registration
+  app.post("/api/users/:id/approve", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      const { role } = req.body; // Admin can optionally update the role
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.status !== 'pending') {
+        return res.status(400).json({ message: "User is not in pending status" });
+      }
+      
+      // Update user status to active and potentially update role
+      const updatedUser = await storage.updateUser(userId, { 
+        status: 'active',
+        ...(role && { role }) 
+      });
+      
+      res.json({ 
+        message: "User approved successfully", 
+        user: { ...updatedUser, password: undefined } 
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Reject/suspend a user
+  app.post("/api/users/:id/suspend", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update user status to suspended
+      const updatedUser = await storage.updateUser(userId, { 
+        status: 'suspended',
+        suspension_reason: reason || 'Suspended by administrator'
+      });
+      
+      res.json({ 
+        message: "User suspended successfully", 
+        user: { ...updatedUser, password: undefined } 
+      });
+    } catch (error) {
+      next(error);
+    }
   });
 
   // Role-based middleware

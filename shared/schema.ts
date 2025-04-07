@@ -5,6 +5,7 @@ import { relations } from "drizzle-orm";
 
 // Enums
 export const userRoleEnum = pgEnum('user_role', ['admin', 'sales', 'customer', 'finance']);
+export const userStatusEnum = pgEnum('user_status', ['active', 'pending', 'suspended']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['active', 'pending', 'expired']);
 export const discountStatusEnum = pgEnum('discount_status', ['pending', 'approved', 'rejected']);
 export const invoiceStatusEnum = pgEnum('invoice_status', ['paid', 'pending', 'overdue']);
@@ -18,7 +19,10 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   role: userRoleEnum("role").notNull().default('customer'),
+  status: userStatusEnum("status").notNull().default('active'),
   company: text("company"),
+  phone: text("phone"),
+  suspension_reason: text("suspension_reason"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   stripe_customer_id: text("stripe_customer_id"),
   // For sales team

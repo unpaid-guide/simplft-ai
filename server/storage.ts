@@ -20,6 +20,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUsersByStatus(status: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, data: Partial<User>): Promise<User>;
   listUsers(role?: string): Promise<User[]>;
@@ -134,6 +135,10 @@ export class DatabaseStorage implements IStorage {
       return db.select().from(users).where(eq(users.role, role as any));
     }
     return db.select().from(users);
+  }
+  
+  async getUsersByStatus(status: string): Promise<User[]> {
+    return db.select().from(users).where(eq(users.status, status as any));
   }
 
   async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User> {

@@ -16,6 +16,7 @@ import DiscountApprovals from "@/pages/discount-approvals";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Checkout from "@/pages/checkout";
+import UserManagement from "@/pages/user-management";
 
 function Router() {
   return (
@@ -36,6 +37,11 @@ function Router() {
         path="/reports" 
         component={Reports} 
         allowedRoles={["admin", "finance"]}
+      />
+      <ProtectedRoute 
+        path="/user-management" 
+        component={UserManagement} 
+        allowedRoles={["admin"]}
       />
       <ProtectedRoute path="/settings" component={Settings} />
       <ProtectedRoute path="/checkout" component={Checkout} />
