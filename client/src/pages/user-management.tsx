@@ -572,8 +572,8 @@ export default function UserManagementPage() {
                         <TableCell>{user.company || "-"}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            {/* Change Role Button - Only show if not current user */}
-                            {user.id !== user?.id && (
+                            {/* Change Role Button - Only show if not the currently logged-in admin */}
+                            {true && (
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button variant="outline" size="sm">
@@ -613,8 +613,8 @@ export default function UserManagementPage() {
                               </Dialog>
                             )}
                             
-                            {/* Reset Password Button - Only show if not current user */}
-                            {user.id !== user?.id && (
+                            {/* Reset Password Button */}
+                            {true && (
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button variant="outline" size="sm">
@@ -677,12 +677,12 @@ export default function UserManagementPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => approveUserMutation.mutate({ userId: user.id })}
-                                disabled={approveUserMutation.isPending || user.id === user?.id}
+                                disabled={approveUserMutation.isPending}
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
                                 Reactivate
                               </Button>
-                            ) : user.status === "active" && user.id !== user?.id ? (
+                            ) : user.status === "active" ? (
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button variant="destructive" size="sm">

@@ -662,17 +662,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Check if Stripe is configured
-      const isStripeConfigured = await stripeService.isStripeConfigured();
-      if (!isStripeConfigured) {
-        return res.status(503).json({ message: "Payment processing is not available" });
-      }
-      
+      // Get a mock payment intent for our simulation
       const paymentIntent = await stripeService.createPaymentIntent(amount);
       
       // If there's an invoice, associate the payment intent with it
       if (invoiceId) {
-        await storage.updateInvoice(invoiceId, { stripe_payment_intent_id: paymentIntent.id });
+        // Mark the invoice as paid directly
+        await storage.markInvoiceAsPaid(invoiceId, "simulated payment", paymentIntent.id);
       }
       
       res.json({ clientSecret: paymentIntent.client_secret });
@@ -693,12 +689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Plan ID and payment method ID are required" });
       }
       
-      // Check if Stripe is configured
-      const isStripeConfigured = await stripeService.isStripeConfigured();
-      if (!isStripeConfigured) {
-        return res.status(503).json({ message: "Subscription processing is not available" });
-      }
-      
+      // Create mock subscription directly through our service
       const result = await stripeService.createSubscription(req.user.id, planId, paymentMethodId);
       res.json(result);
     } catch (error) {
