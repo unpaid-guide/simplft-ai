@@ -1,6 +1,8 @@
 import { users, User, InsertUser, subscriptions, Subscription, InsertSubscription, plans, Plan, InsertPlan, 
   tokenUsage, TokenUsage, InsertTokenUsage, products, Product, InsertProduct, quotes, Quote, InsertQuote, 
-  invoices, Invoice, InsertInvoice, discountRequests, DiscountRequest, InsertDiscountRequest, reports, Report, InsertReport } from "@shared/schema";
+  invoices, Invoice, InsertInvoice, discountRequests, DiscountRequest, InsertDiscountRequest, 
+  jobDescriptions, JobDescription, InsertJobDescription, 
+  reports, Report, InsertReport } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, desc, sql as sqlBuilder, count, avg, inArray } from "drizzle-orm";
 import session from "express-session";
@@ -66,6 +68,13 @@ export interface IStorage {
   listPendingDiscountRequests(): Promise<DiscountRequest[]>;
   approveDiscountRequest(id: number, approverId: number, notes?: string): Promise<DiscountRequest>;
   rejectDiscountRequest(id: number, approverId: number, notes?: string): Promise<DiscountRequest>;
+  
+  // Job Description management
+  createJobDescription(jobDescription: InsertJobDescription): Promise<JobDescription>;
+  getJobDescription(id: number): Promise<JobDescription | undefined>;
+  listJobDescriptionsByUserId(userId: number): Promise<JobDescription[]>;
+  updateJobDescription(id: number, data: Partial<JobDescription>): Promise<JobDescription>;
+  listPublicJobDescriptions(): Promise<JobDescription[]>;
 
   // Reports
   createReport(report: InsertReport): Promise<Report>;
@@ -122,7 +131,7 @@ export class DatabaseStorage implements IStorage {
 
   async listUsers(role?: string): Promise<User[]> {
     if (role) {
-      return db.select().from(users).where(eq(users.role, role));
+      return db.select().from(users).where(eq(users.role, role as any));
     }
     return db.select().from(users);
   }
@@ -439,6 +448,42 @@ export class DatabaseStorage implements IStorage {
     return updatedRequest;
   }
 
+  // Job Description management
+  async createJobDescription(jobDescription: InsertJobDescription): Promise<JobDescription> {
+    const [newJobDescription] = await db.insert(jobDescriptions).values(jobDescription).returning();
+    return newJobDescription;
+  }
+
+  async getJobDescription(id: number): Promise<JobDescription | undefined> {
+    const [jobDescription] = await db.select().from(jobDescriptions).where(eq(jobDescriptions.id, id));
+    return jobDescription;
+  }
+
+  async listJobDescriptionsByUserId(userId: number): Promise<JobDescription[]> {
+    return db
+      .select()
+      .from(jobDescriptions)
+      .where(eq(jobDescriptions.user_id, userId))
+      .orderBy(desc(jobDescriptions.created_at));
+  }
+
+  async updateJobDescription(id: number, data: Partial<JobDescription>): Promise<JobDescription> {
+    const [updatedJobDescription] = await db
+      .update(jobDescriptions)
+      .set(data)
+      .where(eq(jobDescriptions.id, id))
+      .returning();
+    return updatedJobDescription;
+  }
+
+  async listPublicJobDescriptions(): Promise<JobDescription[]> {
+    return db
+      .select()
+      .from(jobDescriptions)
+      .where(eq(jobDescriptions.is_public, true))
+      .orderBy(desc(jobDescriptions.created_at));
+  }
+
   // Reports
   async createReport(report: InsertReport): Promise<Report> {
     const [newReport] = await db.insert(reports).values(report).returning();
@@ -448,18 +493,18 @@ export class DatabaseStorage implements IStorage {
   async getMonthlyRecurringRevenue(): Promise<number> {
     const result = await db
       .select({
-        mrr: sqlBuilder`SUM(${plans.price})`,
+        mrr: sqlBuilder<number>`SUM(${plans.price})`,
       })
       .from(subscriptions)
       .innerJoin(plans, eq(subscriptions.plan_id, plans.id))
       .where(
         and(
-          eq(subscriptions.status, 'active'),
+          eq(subscriptions.status, 'active' as any),
           gte(subscriptions.end_date, new Date())
         )
       );
     
-    return result[0]?.mrr || 0;
+    return Number(result[0]?.mrr) || 0;
   }
 
   async getAnnualRecurringRevenue(): Promise<number> {
@@ -477,7 +522,7 @@ export class DatabaseStorage implements IStorage {
     const cancelledSubscriptionsResult = await db
       .select({ count: count() })
       .from(subscriptions)
-      .where(eq(subscriptions.status, 'expired'));
+      .where(eq(subscriptions.status, 'expired' as any));
     
     const totalSubscriptions = totalSubscriptionsResult[0]?.count || 0;
     const cancelledSubscriptions = cancelledSubscriptionsResult[0]?.count || 0;
@@ -491,7 +536,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .select({ count: count() })
       .from(subscriptions)
-      .where(eq(subscriptions.status, 'active'));
+      .where(eq(subscriptions.status, 'active' as any));
     
     return result[0]?.count || 0;
   }

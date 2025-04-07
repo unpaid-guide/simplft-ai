@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, foreignKey, pgEnum, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, foreignKey, pgEnum, decimal, jsonb, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -30,6 +30,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   invoices: many(invoices),
   quotes: many(quotes),
   discountRequests: many(discountRequests),
+  jobDescriptions: many(jobDescriptions),
 }));
 
 // Subscription Plans
@@ -196,6 +197,35 @@ export const discountRequestsRelations = relations(discountRequests, ({ one }) =
   }),
 }));
 
+// Job Descriptions
+export const jobSeniorityEnum = pgEnum('job_seniority', ['entry', 'junior', 'mid', 'senior', 'executive']);
+
+export const jobDescriptions = pgTable("job_descriptions", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar("title", { length: 255 }).notNull(),
+  company: varchar("company", { length: 255 }),
+  department: varchar("department", { length: 255 }),
+  seniority: jobSeniorityEnum("seniority").default('mid'),
+  industry: varchar("industry", { length: 255 }),
+  skills: jsonb("skills").default([]).notNull(),
+  responsibilities: text("responsibilities"),
+  requirements: text("requirements"),
+  benefits: text("benefits"),
+  description: text("description").notNull(),
+  tokens_used: integer("tokens_used").notNull().default(0),
+  is_public: boolean("is_public").default(false).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const jobDescriptionsRelations = relations(jobDescriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [jobDescriptions.user_id],
+    references: [users.id],
+  }),
+}));
+
 // Reports
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
@@ -214,6 +244,7 @@ export const insertProductSchema = createInsertSchema(products).omit({ id: true 
 export const insertQuoteSchema = createInsertSchema(quotes).omit({ id: true, created_at: true });
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, created_at: true, paid_date: true });
 export const insertDiscountRequestSchema = createInsertSchema(discountRequests).omit({ id: true, requested_at: true, decided_at: true, status: true, approved_by: true, decision_notes: true });
+export const insertJobDescriptionSchema = createInsertSchema(jobDescriptions).omit({ id: true, created_at: true, updated_at: true, tokens_used: true });
 export const insertReportSchema = createInsertSchema(reports).omit({ id: true, created_at: true });
 
 // Type Definitions
@@ -240,6 +271,9 @@ export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 
 export type DiscountRequest = typeof discountRequests.$inferSelect;
 export type InsertDiscountRequest = z.infer<typeof insertDiscountRequestSchema>;
+
+export type JobDescription = typeof jobDescriptions.$inferSelect;
+export type InsertJobDescription = z.infer<typeof insertJobDescriptionSchema>;
 
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;

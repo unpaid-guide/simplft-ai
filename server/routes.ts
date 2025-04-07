@@ -3,11 +3,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import stripeService from "./stripe";
-import { zodResolver } from "zod-validation-error";
+import { fromZodError } from "zod-validation-error";
 import { 
   insertUserSchema, insertPlanSchema, insertSubscriptionSchema, insertTokenUsageSchema,
-  insertProductSchema, insertQuoteSchema, insertInvoiceSchema, insertDiscountRequestSchema
+  insertProductSchema, insertQuoteSchema, insertInvoiceSchema, insertDiscountRequestSchema,
+  insertJobDescriptionSchema
 } from "@shared/schema";
+import { generateJobDescription } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes and middleware
@@ -78,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const validateResult = insertPlanSchema.safeParse(req.body);
       if (!validateResult.success) {
-        return res.status(400).json({ message: "Invalid plan data", errors: validateResult.error });
+        return res.status(400).json({ message: "Invalid plan data", errors: fromZodError(validateResult.error) });
       }
       
       const plan = await storage.createPlan(validateResult.data);
@@ -154,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const validateResult = insertSubscriptionSchema.safeParse(req.body);
       if (!validateResult.success) {
-        return res.status(400).json({ message: "Invalid subscription data", errors: validateResult.error });
+        return res.status(400).json({ message: "Invalid subscription data", errors: fromZodError(validateResult.error) });
       }
       
       // Only allow admins to create subscriptions for other users
@@ -631,6 +633,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedRequest = await storage.rejectDiscountRequest(requestId, req.user.id, notes);
       res.json(updatedRequest);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Job Description management routes
+  app.get("/api/job-descriptions", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Filter by user ID
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : req.user.id;
+      
+      // Regular users can only see their own job descriptions
+      if (userId !== req.user.id && !['admin'].includes(req.user.role)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const jobDescriptions = await storage.listJobDescriptionsByUserId(userId);
+      res.json(jobDescriptions);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/job-descriptions/public", async (_req, res, next) => {
+    try {
+      const jobDescriptions = await storage.listPublicJobDescriptions();
+      res.json(jobDescriptions);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/job-descriptions/:id", async (req, res, next) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const jobDescription = await storage.getJobDescription(jobId);
+      
+      if (!jobDescription) {
+        return res.status(404).json({ message: "Job description not found" });
+      }
+      
+      // Check if the job is public or if the user is authenticated and is the owner or admin
+      const isPublic = jobDescription.is_public;
+      const isOwner = req.isAuthenticated() && req.user.id === jobDescription.user_id;
+      const isAdmin = req.isAuthenticated() && req.user.role === 'admin';
+      
+      if (!isPublic && !isOwner && !isAdmin) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(jobDescription);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/job-descriptions", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Validate and create directly - this endpoint doesn't use AI generation
+      const validateResult = insertJobDescriptionSchema.safeParse(req.body);
+      if (!validateResult.success) {
+        return res.status(400).json({ message: "Invalid job description data", errors: fromZodError(validateResult.error) });
+      }
+      
+      // Only allow users to create job descriptions for themselves
+      const jobData = {
+        ...validateResult.data,
+        user_id: req.user.id
+      };
+      
+      const jobDescription = await storage.createJobDescription(jobData);
+      res.status(201).json(jobDescription);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/job-descriptions/generate", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const { title, company, department, seniority, industry, skills, customInstructions } = req.body;
+      
+      if (!title) {
+        return res.status(400).json({ message: "Job title is required" });
+      }
+      
+      try {
+        const jobDescription = await generateJobDescription({
+          userId: req.user.id,
+          title,
+          company,
+          department,
+          seniority,
+          industry,
+          skills,
+          customInstructions
+        });
+        
+        res.status(201).json(jobDescription);
+      } catch (error: any) {
+        if (error.message.includes("token balance")) {
+          return res.status(400).json({ message: error.message });
+        }
+        throw error;
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.put("/api/job-descriptions/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const jobId = parseInt(req.params.id);
+      const jobDescription = await storage.getJobDescription(jobId);
+      
+      if (!jobDescription) {
+        return res.status(404).json({ message: "Job description not found" });
+      }
+      
+      // Only the owner or admin can update a job description
+      if (jobDescription.user_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updatedJobDescription = await storage.updateJobDescription(jobId, req.body);
+      res.json(updatedJobDescription);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.put("/api/job-descriptions/:id/visibility", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const jobId = parseInt(req.params.id);
+      const { is_public } = req.body;
+      
+      if (typeof is_public !== 'boolean') {
+        return res.status(400).json({ message: "is_public must be a boolean" });
+      }
+      
+      const jobDescription = await storage.getJobDescription(jobId);
+      
+      if (!jobDescription) {
+        return res.status(404).json({ message: "Job description not found" });
+      }
+      
+      // Only the owner or admin can update visibility
+      if (jobDescription.user_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updatedJobDescription = await storage.updateJobDescription(jobId, { is_public });
+      res.json(updatedJobDescription);
     } catch (error) {
       next(error);
     }
