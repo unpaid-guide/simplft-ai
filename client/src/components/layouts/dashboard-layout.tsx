@@ -4,7 +4,7 @@ import { useState } from "react";
 import { 
   LayoutDashboard, Users, Coins, FileText, Percent, 
   BarChart, Settings, UserCog, LogOut, Menu, X, Search, BellIcon,
-  FileSpreadsheet, LineChart
+  FileSpreadsheet, LineChart, Package, BookOpen, Receipt, DollarSign
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,12 @@ const navItems: NavItem[] = [
     roles: ["admin"]
   },
   { 
+    label: "Products", 
+    href: "/products-management", 
+    icon: <Package className="mr-3 h-4 w-4" />,
+    roles: ["admin", "sales", "finance"]
+  },
+  { 
     label: "Subscriptions", 
     href: "/subscriptions", 
     icon: <Coins className="mr-3 h-4 w-4" />,
@@ -54,6 +60,12 @@ const navItems: NavItem[] = [
     href: "/discount-approvals", 
     icon: <Percent className="mr-3 h-4 w-4" />,
     roles: ["admin", "sales"]
+  },
+  { 
+    label: "Accounting", 
+    href: "/accounting", 
+    icon: <BookOpen className="mr-3 h-4 w-4" />,
+    roles: ["admin", "finance"]
   },
   { 
     label: "Reports", 

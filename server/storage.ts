@@ -44,16 +44,26 @@ export interface IStorage {
   getTokenUsageBySubscription(subscriptionId: number): Promise<TokenUsage[]>;
   deductTokens(subscriptionId: number, amount: number, description: string): Promise<Subscription>;
   
+  // Product Category management
+  createProductCategory(category: InsertProductCategory): Promise<ProductCategory>;
+  getProductCategory(id: number): Promise<ProductCategory | undefined>;
+  listProductCategories(): Promise<ProductCategory[]>;
+  updateProductCategory(id: number, data: Partial<ProductCategory>): Promise<ProductCategory>;
+  getCategoryWithSubcategories(id: number): Promise<ProductCategory[]>;
+  
   // Product management
   createProduct(product: InsertProduct): Promise<Product>;
   listActiveProducts(): Promise<Product[]>;
+  listProductsByCategory(categoryId: number): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
+  updateProduct(id: number, data: Partial<Product>): Promise<Product>;
 
   // Quote management
   createQuote(quote: InsertQuote): Promise<Quote>;
   getQuote(id: number): Promise<Quote | undefined>;
   listQuotesByUserId(userId: number): Promise<Quote[]>;
   updateQuoteStatus(id: number, status: string): Promise<Quote>;
+  updateQuote(id: number, data: Partial<Quote>): Promise<Quote>;
 
   // Invoice management
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
@@ -61,7 +71,7 @@ export interface IStorage {
   listInvoicesByUserId(userId: number): Promise<Invoice[]>;
   updateInvoiceStatus(id: number, status: string): Promise<Invoice>;
   updateInvoice(id: number, data: Partial<Invoice>): Promise<Invoice>;
-  markInvoiceAsPaid(id: number, paymentMethod: string, paymentIntentId?: string): Promise<Invoice>;
+  markInvoiceAsPaid(id: number, paymentMethod: string, paymentReference?: string): Promise<Invoice>;
 
   // Discount management
   createDiscountRequest(request: InsertDiscountRequest): Promise<DiscountRequest>;
@@ -77,12 +87,42 @@ export interface IStorage {
   updateJobDescription(id: number, data: Partial<JobDescription>): Promise<JobDescription>;
   listPublicJobDescriptions(): Promise<JobDescription[]>;
 
+  // Account management
+  createAccount(account: InsertAccount): Promise<Account>;
+  getAccount(id: number): Promise<Account | undefined>;
+  getAccountByName(name: string): Promise<Account | undefined>;
+  listAccounts(type?: string): Promise<Account[]>;
+  updateAccount(id: number, data: Partial<Account>): Promise<Account>;
+  
+  // Account Transactions
+  createAccountTransaction(transaction: InsertAccountTransaction): Promise<AccountTransaction>;
+  getAccountTransaction(id: number): Promise<AccountTransaction | undefined>;
+  listAccountTransactions(accountId: number): Promise<AccountTransaction[]>;
+  getAccountBalance(accountId: number): Promise<number>;
+  
+  // Expense management
+  createExpense(expense: InsertExpense): Promise<Expense>;
+  getExpense(id: number): Promise<Expense | undefined>;
+  listExpenses(status?: string): Promise<Expense[]>;
+  updateExpense(id: number, data: Partial<Expense>): Promise<Expense>;
+  approveExpense(id: number, approverId: number): Promise<Expense>;
+  rejectExpense(id: number, approverId: number, reason?: string): Promise<Expense>;
+  
+  // VAT management
+  createVatReturn(vatReturn: InsertVatReturn): Promise<VatReturn>;
+  getVatReturn(id: number): Promise<VatReturn | undefined>;
+  listVatReturns(status?: string): Promise<VatReturn[]>;
+  updateVatReturn(id: number, data: Partial<VatReturn>): Promise<VatReturn>;
+  calculateVatForPeriod(startDate: Date, endDate: Date): Promise<{ output: number, input: number, net: number }>;
+  
   // Reports
   createReport(report: InsertReport): Promise<Report>;
   getMonthlyRecurringRevenue(): Promise<number>;
   getAnnualRecurringRevenue(): Promise<number>;
   getChurnRate(): Promise<number>;
   getActiveSubscriptionsCount(): Promise<number>;
+  getProfitAndLoss(startDate: Date, endDate: Date): Promise<any>;
+  getBalanceSheet(date: Date): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -359,7 +399,7 @@ export class DatabaseStorage implements IStorage {
     return updatedInvoice;
   }
 
-  async markInvoiceAsPaid(id: number, paymentMethod: string, paymentIntentId?: string): Promise<Invoice> {
+  async markInvoiceAsPaid(id: number, paymentMethod: string, paymentReference?: string): Promise<Invoice> {
     const paidDate = new Date();
     const updateData: any = { 
       status: 'paid', 
@@ -367,8 +407,8 @@ export class DatabaseStorage implements IStorage {
       payment_method: paymentMethod 
     };
     
-    if (paymentIntentId) {
-      updateData.stripe_payment_intent_id = paymentIntentId;
+    if (paymentReference) {
+      updateData.payment_reference = paymentReference;
     }
     
     const [updatedInvoice] = await db
@@ -426,7 +466,7 @@ export class DatabaseStorage implements IStorage {
         }
         
         // Update the quote with the discount and new total
-        const total = quote.subtotal - discountAmount + (quote.tax || 0);
+        const total = quote.subtotal - discountAmount + (quote.vat_amount || 0);
         await db
           .update(quotes)
           .set({ 
