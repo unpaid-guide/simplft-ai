@@ -1,0 +1,126 @@
+One requirement is where possible we need to use available free resources SaaS Platform Development Plan
+
+Phase 1 (MVP) & Phase 2 Development Breakdown
+
+Overview
+
+We are bootstrapping the business and need to develop a proprietary SaaS platform in stages to minimize costs, enhance investor appeal, and ensure scalability. Our focus is on building an MVP under $2000 that will allow us to showcase the core functionality to customers while preparing for future expansions.
+	•	Platform: Proprietary development on Replit (Python, FastAPI, React, PostgreSQL) instead of Odoo.
+	•	Core Model: Token-Based Subscription Model with AI functionalities (future phases).
+	•	Pricing Model: Consultative Approach, meaning pricing is customized per customer based on their needs.
+	•	Key Features in MVP: Payment Gateway, Subscription Management, Quotes & Invoices, Token Utilization, Discount Authorization Workflow.
+	•	Long-Term Goal: Gradual development of AI-based automation and advanced analytics once funding is secured.
+
+⸻
+
+📌 Phase 1: MVP Development
+
+Objective: Build a functional SaaS platform with core features to onboard paying customers.
+
+🔹 Setup & Core Backend Development
+
+✅ Project Setup & Infrastructure
+	•	Hosting setup (AWS/DigitalOcean/Replit)
+	•	Database setup (PostgreSQL)
+	•	Environment configuration (CI/CD pipelines)
+
+✅ User Authentication System
+	•	Sign-up, login, and role-based access (Admin, Sales, Customer, Finance)
+	•	Account Management (Profile settings, password reset)
+
+✅ Token-Based Subscription Model
+	•	Token allocation based on subscription type
+	•	Token deduction logic based on service usage
+
+⸻
+
+🔹 Payment, Quotes & Invoicing System
+
+✅ Payment Gateway Integration
+	•	Stripe, PayPal, or UAE-based provider for online transactions
+	•	Subscription tracking (paid/pending/expired status)
+
+✅ Quotes & Invoicing System
+	•	Product/service listing (internal pricing for admin)
+	•	Customer-side invoice generation (shows services they paid for)
+	•	Payment status tracking
+
+⸻
+
+🔹 Discount Approval & Customer Dashboard
+
+✅ Discount Authorization Workflow
+	•	Salesperson can only give predefined discounts
+	•	If additional discount is required, approval process is triggered
+	•	Option to define discount by amount or percentage
+
+✅ Customer Dashboard
+	•	Token Balance & usage tracking
+	•	Subscription Status (Paid/Pending/Expired)
+	•	Invoice & Payment History
+
+⸻
+
+🔹 Admin Dashboard & Reporting
+
+✅ Admin Panel
+	•	Manage subscriptions, invoices, token allocation
+	•	Discount approval workflow
+	•	ARR, MRR, Churn Rate tracking (Basic version)
+
+✅ Final Testing & Bug Fixes
+
+⸻
+
+🔹 Deployment & Soft Launch
+
+✅ UI/UX Enhancements (Improve navigation, polish design)
+✅ Security Testing & Payment Gateway Validation
+✅ Deployment on Production Server (AWS, Vercel, or DigitalOcean)
+✅ Final Debugging & Soft Launch
+
+⸻
+
+📌 Phase 2: Advanced Features & AI Integration
+
+Objective: Expand the platform with automation, AI-powered workflows, and analytics.
+
+🔹 AI-Powered Automation
+
+✅ AI-Driven JD & Resume Screening
+	•	AI-generated job descriptions
+	•	AI-based resume matching & ranking
+
+✅ AI-Based Pricing & Plan Recommendations
+	•	AI-driven plan recommendations based on company profile
+	•	Predictive analytics for customer retention & churn prevention
+
+⸻
+
+🔹 Advanced Subscription & Token Management
+
+✅ Flexible Subscription Adjustments
+	•	Customers can dynamically adjust token needs
+	•	Automated billing & proration calculations
+
+✅ Auto-Top Up & Usage Insights
+	•	Auto-purchase extra tokens when needed
+	•	Personalized usage insights for customers
+
+⸻
+
+🔹 Regulatory & Compliance Dashboards
+
+✅ Compliance tracking for HR, IT, Regulatory & Risk Advisory
+✅ AI-powered contract & policy recommendations
+
+⸻
+
+🔹 Data Analytics & Business Intelligence
+
+✅ Real-Time Business Performance Dashboards
+	•	Deep insights into ARR, MRR, Churn Rate, Active Users
+	•	Forecasting models for revenue growth
+
+✅ AI-Generated Reports & Alerts
+	•	Predictive alerts for renewals, pending payments, and compliance risks
