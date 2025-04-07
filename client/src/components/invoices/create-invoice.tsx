@@ -297,7 +297,7 @@ export default function CreateInvoice() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">No quote selected</SelectItem>
+                          <SelectItem value="0">No quote selected</SelectItem>
                           {!quotesLoading && quotes?.map((quote: any) => (
                             <SelectItem key={quote.id} value={quote.id.toString()}>
                               {quote.quote_number}
