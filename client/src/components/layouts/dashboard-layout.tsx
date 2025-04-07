@@ -4,7 +4,7 @@ import { useState } from "react";
 import { 
   LayoutDashboard, Users, Coins, FileText, Percent, 
   BarChart, Settings, UserCog, LogOut, Menu, X, Search, BellIcon,
-  FileSpreadsheet
+  FileSpreadsheet, LineChart
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,12 @@ const navItems: NavItem[] = [
     label: "Reports", 
     href: "/reports", 
     icon: <BarChart className="mr-3 h-4 w-4" />,
+    roles: ["admin", "finance"]
+  },
+  { 
+    label: "Business Intelligence", 
+    href: "/business-intelligence", 
+    icon: <LineChart className="mr-3 h-4 w-4" />,
     roles: ["admin", "finance"]
   },
   { 

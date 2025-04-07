@@ -14,6 +14,7 @@ import Invoices from "@/pages/invoices";
 import Quotes from "@/pages/quotes";
 import DiscountApprovals from "@/pages/discount-approvals";
 import Reports from "@/pages/reports";
+import BusinessIntelligence from "@/pages/business-intelligence";
 import Settings from "@/pages/settings";
 import Checkout from "@/pages/checkout";
 import UserManagement from "@/pages/user-management";
@@ -36,6 +37,11 @@ function Router() {
       <ProtectedRoute 
         path="/reports" 
         component={Reports} 
+        allowedRoles={["admin", "finance"]}
+      />
+      <ProtectedRoute 
+        path="/business-intelligence" 
+        component={BusinessIntelligence} 
         allowedRoles={["admin", "finance"]}
       />
       <ProtectedRoute 
