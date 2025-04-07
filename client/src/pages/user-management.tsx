@@ -186,6 +186,58 @@ export default function UserManagementPage() {
       });
     },
   });
+  
+  // Change user role mutation
+  const changeRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: number, role: string }) => {
+      const res = await apiRequest("PATCH", `/api/users/${userId}/role`, { role });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to change user role");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Role updated",
+        description: "The user's role has been updated successfully.",
+      });
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update role",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Reset password mutation
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: number, newPassword: string }) => {
+      const res = await apiRequest("POST", `/api/users/${userId}/reset-password`, { newPassword });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to reset password");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password reset",
+        description: "The user's password has been reset successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to reset password",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleCreateUser = () => {
     if (!newUserData.email || !newUserData.password || !newUserData.name) {
@@ -520,6 +572,106 @@ export default function UserManagementPage() {
                         <TableCell>{user.company || "-"}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
+                            {/* Change Role Button - Only show if not current user */}
+                            {user.id !== user?.id && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    Change Role
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Update User Role</DialogTitle>
+                                    <DialogDescription>
+                                      Change the role for {user.name}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="py-4">
+                                    <Label htmlFor={`role-${user.id}`}>Select New Role</Label>
+                                    <Select
+                                      defaultValue={user.role}
+                                      onValueChange={(value) => {
+                                        changeRoleMutation.mutate({
+                                          userId: user.id,
+                                          role: value
+                                        });
+                                      }}
+                                    >
+                                      <SelectTrigger id={`role-${user.id}`}>
+                                        <SelectValue placeholder="Select role" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="finance">Finance</SelectItem>
+                                        <SelectItem value="sales">Sales</SelectItem>
+                                        <SelectItem value="customer">Customer</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                            
+                            {/* Reset Password Button - Only show if not current user */}
+                            {user.id !== user?.id && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    Reset Password
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Reset Password</DialogTitle>
+                                    <DialogDescription>
+                                      Set a new password for {user.name}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="py-4">
+                                    <Label htmlFor={`new-password-${user.id}`}>New Password</Label>
+                                    <Input
+                                      id={`new-password-${user.id}`}
+                                      type="password"
+                                      placeholder="Enter new password"
+                                      className="mt-2"
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          const input = e.target as HTMLInputElement;
+                                          resetPasswordMutation.mutate({
+                                            userId: user.id,
+                                            newPassword: input.value
+                                          });
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  <DialogFooter>
+                                    <Button
+                                      onClick={(e) => {
+                                        const input = document.getElementById(`new-password-${user.id}`) as HTMLInputElement;
+                                        resetPasswordMutation.mutate({
+                                          userId: user.id,
+                                          newPassword: input.value
+                                        });
+                                      }}
+                                      disabled={resetPasswordMutation.isPending}
+                                    >
+                                      {resetPasswordMutation.isPending ? (
+                                        <>
+                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                          Resetting...
+                                        </>
+                                      ) : (
+                                        "Reset Password"
+                                      )}
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+
+                            {/* Status Management */}
                             {user.status === "suspended" ? (
                               <Button
                                 size="sm"

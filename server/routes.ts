@@ -1,13 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import stripeService from "./stripe";
 import { fromZodError } from "zod-validation-error";
 import { 
   insertUserSchema, insertPlanSchema, insertSubscriptionSchema, insertTokenUsageSchema,
   insertProductSchema, insertQuoteSchema, insertInvoiceSchema, insertDiscountRequestSchema,
-  insertJobDescriptionSchema
+  insertJobDescriptionSchema, User as SchemaUser
 } from "@shared/schema";
 import { generateJobDescription } from "./openai";
 
@@ -54,6 +54,195 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Don't send password
       const { password, ...sanitizedUser } = user;
+      
+      res.json(sanitizedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get pending users route
+  app.get("/api/users/pending", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const pendingUsers = await storage.getUsersByStatus("pending");
+      
+      // Don't send passwords to the client
+      const sanitizedUsers = pendingUsers.map(user => ({ ...user, password: undefined }));
+
+      res.json(sanitizedUsers);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Approve user
+  app.post("/api/users/:id/approve", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const userId = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const updatedUser = await storage.updateUser(userId, { 
+        status: "active",
+        ...(role && { role })
+      });
+
+      const { password, ...sanitizedUser } = updatedUser;
+      
+      res.json(sanitizedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Suspend user
+  app.post("/api/users/:id/suspend", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const userId = parseInt(req.params.id);
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Don't allow suspending yourself
+      if (userId === req.user.id) {
+        return res.status(400).json({ message: "Cannot suspend yourself" });
+      }
+
+      const updatedUser = await storage.updateUser(userId, { status: "suspended" });
+      const { password, ...sanitizedUser } = updatedUser;
+      
+      res.json(sanitizedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Change user role
+  app.patch("/api/users/:id/role", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const userId = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      if (!role || !['admin', 'finance', 'sales', 'customer'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Don't allow changing your own role
+      if (userId === req.user.id) {
+        return res.status(400).json({ message: "Cannot change your own role" });
+      }
+
+      const updatedUser = await storage.updateUser(userId, { role });
+      const { password, ...sanitizedUser } = updatedUser;
+      
+      res.json(sanitizedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Reset user password
+  app.post("/api/users/:id/reset-password", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const userId = parseInt(req.params.id);
+      const { newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Use the imported hashPassword function
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+      const updatedUser = await storage.updateUser(userId, { password: hashedPassword });
+      const { password, ...sanitizedUser } = updatedUser;
+      
+      res.json(sanitizedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Change own password
+  app.post("/api/users/:id/change-password", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const userId = parseInt(req.params.id);
+      
+      // Users can only change their own password unless they're admin
+      if (userId !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!newPassword || newPassword.length < 8) {
+        return res.status(400).json({ message: "New password must be at least 8 characters" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Use the imported auth functions
+      
+      // If user is changing their own password, verify current password
+      if (userId === req.user.id) {
+        if (!currentPassword) {
+          return res.status(400).json({ message: "Current password is required" });
+        }
+        
+        const isPasswordValid = await comparePasswords(currentPassword, user.password);
+        if (!isPasswordValid) {
+          return res.status(400).json({ message: "Current password is incorrect" });
+        }
+      }
+
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+      const updatedUser = await storage.updateUser(userId, { password: hashedPassword });
+      const { password, ...sanitizedUser } = updatedUser;
       
       res.json(sanitizedUser);
     } catch (error) {
@@ -553,9 +742,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // If both discount percent and amount are provided, check both
         if (validateResult.data.discount_percent) {
           const percentValue = Number(validateResult.data.discount_percent);
-          if (percentValue > req.user.discount_limit) {
+          const discountLimit = req.user.discount_limit || 0;
+          if (percentValue > discountLimit) {
             return res.status(403).json({ 
-              message: `Discount exceeds your limit of ${req.user.discount_limit}%. Please submit for approval.` 
+              message: `Discount exceeds your limit of ${discountLimit}%. Please submit for approval.` 
             });
           }
         }
@@ -566,9 +756,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const quote = await storage.getQuote(validateResult.data.quote_id);
           if (quote) {
             const percentValue = (validateResult.data.discount_amount / quote.subtotal) * 100;
-            if (percentValue > req.user.discount_limit) {
+            const discountLimit = req.user.discount_limit || 0;
+            if (percentValue > discountLimit) {
               return res.status(403).json({ 
-                message: `Discount exceeds your limit of ${req.user.discount_limit}%. Please submit for approval.` 
+                message: `Discount exceeds your limit of ${discountLimit}%. Please submit for approval.` 
               });
             }
           }

@@ -18,6 +18,7 @@ import BusinessIntelligence from "@/pages/business-intelligence";
 import Settings from "@/pages/settings";
 import Checkout from "@/pages/checkout";
 import UserManagement from "@/pages/user-management";
+import ProfileSettings from "@/pages/settings/profile";
 
 function Router() {
   return (
@@ -50,6 +51,7 @@ function Router() {
         allowedRoles={["admin"]}
       />
       <ProtectedRoute path="/settings" component={Settings} />
+      <ProtectedRoute path="/settings/profile" component={ProfileSettings} />
       <ProtectedRoute path="/checkout" component={Checkout} />
       
       {/* Fallback to 404 */}

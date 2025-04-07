@@ -60,6 +60,7 @@ export interface IStorage {
   getInvoice(id: number): Promise<Invoice | undefined>;
   listInvoicesByUserId(userId: number): Promise<Invoice[]>;
   updateInvoiceStatus(id: number, status: string): Promise<Invoice>;
+  updateInvoice(id: number, data: Partial<Invoice>): Promise<Invoice>;
   markInvoiceAsPaid(id: number, paymentMethod: string, paymentIntentId?: string): Promise<Invoice>;
 
   // Discount management
@@ -344,6 +345,15 @@ export class DatabaseStorage implements IStorage {
     const [updatedInvoice] = await db
       .update(invoices)
       .set({ status: status as any })
+      .where(eq(invoices.id, id))
+      .returning();
+    return updatedInvoice;
+  }
+
+  async updateInvoice(id: number, data: Partial<Invoice>): Promise<Invoice> {
+    const [updatedInvoice] = await db
+      .update(invoices)
+      .set(data)
       .where(eq(invoices.id, id))
       .returning();
     return updatedInvoice;
