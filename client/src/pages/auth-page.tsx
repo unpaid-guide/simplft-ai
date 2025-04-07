@@ -99,12 +99,12 @@ export default function AuthPage() {
           <CardHeader className="space-y-1">
             <div className="flex items-center justify-center mb-2">
               <div className="w-12 h-12 rounded-md bg-primary flex items-center justify-center text-white font-bold text-2xl mr-2">
-                T
+                S
               </div>
-              <span className="text-2xl font-bold">TokenSaaS</span>
+              <span className="text-2xl font-bold">Simplft</span>
             </div>
             <CardTitle className="text-2xl font-bold text-center">
-              Welcome to TokenSaaS
+              Welcome to Simplft
             </CardTitle>
             <CardDescription className="text-center">
               {activeTab === "login" 
@@ -302,7 +302,7 @@ export default function AuthPage() {
             Tag-Based Subscription Management Platform
           </h1>
           <p className="text-lg mb-8 text-white/90">
-            TokenSaaS provides a comprehensive solution for managing your subscription-based services with a flexible token system.
+            Simplft provides a comprehensive solution for managing your subscription-based services with a flexible token system.
           </p>
           
           <div className="space-y-6">
