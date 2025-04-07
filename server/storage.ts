@@ -6,10 +6,9 @@ import { users, User, InsertUser, subscriptions, Subscription, InsertSubscriptio
 import { db } from "./db";
 import { eq, and, gte, desc, sql as sqlBuilder, count, avg, inArray } from "drizzle-orm";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { neon } from "@neondatabase/serverless";
+import createMemoryStore from "memorystore";
 
-const PostgresSessionStore = connectPg(session);
+const MemoryStore = createMemoryStore(session);
 
 // Define the storage interface for our application
 export interface IStorage {
@@ -93,15 +92,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error("DATABASE_URL environment variable is not set");
     }
     
-    const sessionStoreOptions = {
-      conObject: {
-        connectionString: process.env.DATABASE_URL,
-      },
-      createTableIfMissing: true,
-      tableName: 'session',
-    };
-    
-    this.sessionStore = new PostgresSessionStore(sessionStoreOptions);
+    // Use memory store for sessions
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
   }
 
   // User management
