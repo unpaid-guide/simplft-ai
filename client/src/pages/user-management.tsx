@@ -41,6 +41,7 @@ import { Loader2, UserPlus, CheckCircle, XCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import DashboardLayout from "@/components/layouts/dashboard-layout";
 
 // Types
 interface User {
@@ -227,26 +228,38 @@ export default function UserManagementPage() {
     }
   };
 
-  if (!user || user.role !== "admin") {
+  if (!user) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <h1 className="text-xl">Access denied</h1>
+        <h1 className="text-xl">Loading...</h1>
       </div>
     );
   }
 
-  return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">User Management</h1>
+  // Role check is done by ProtectedRoute, but we can keep it here as a backup check
+  if (user.role !== "admin") {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-screen">
+          <h1 className="text-xl">Access denied - Only admins can access User Management</h1>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-      <div className="grid gap-8 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New User</CardTitle>
-            <CardDescription>
-              As an admin, you can create new users directly without the approval process.
-            </CardDescription>
-          </CardHeader>
+  return (
+    <DashboardLayout>
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-8">User Management</h1>
+
+        <div className="grid gap-8 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Create New User</CardTitle>
+              <CardDescription>
+                As an admin, you can create new users directly without the approval process.
+              </CardDescription>
+            </CardHeader>
           <CardContent>
             <div className="grid gap-6">
               <div className="grid grid-cols-2 gap-4">
@@ -580,5 +593,6 @@ export default function UserManagementPage() {
         </TabsContent>
       </Tabs>
     </div>
+  </DashboardLayout>
   );
 }
