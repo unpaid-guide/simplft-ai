@@ -299,10 +299,10 @@ export default function AuthPage() {
       <div className="w-full lg:w-1/2 bg-gradient-to-br from-primary to-primary/80 p-8 flex items-center justify-center text-white hidden lg:flex">
         <div className="max-w-xl">
           <h1 className="text-4xl font-bold mb-6">
-            Tag-Based Subscription Management Platform
+            Simplft provides a comprehensive solution
           </h1>
           <p className="text-lg mb-8 text-white/90">
-            Simplft provides a comprehensive solution for managing your subscription-based services with a flexible token system.
+            "Our Customers' Growth Is Our Priority—We Simplify, they Succeed!"
           </p>
           
           <div className="space-y-6">
@@ -311,9 +311,9 @@ export default function AuthPage() {
                 <Tag className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-bold text-xl mb-1">Flexible Tag System</h3>
+                <h3 className="font-bold text-xl mb-1">Unified Solution</h3>
                 <p className="text-white/80">
-                  Our token-based approach allows your customers to pay for exactly what they need.
+                  We eliminate the hassle of working with multiple service providers by offering HR, PRO, Legal, IT, and Insurance under one convenient subscription.
                 </p>
               </div>
             </div>
@@ -323,9 +323,9 @@ export default function AuthPage() {
                 <CheckCircle className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-bold text-xl mb-1">Seamless Invoicing</h3>
+                <h3 className="font-bold text-xl mb-1">Expert Pool on Demand</h3>
                 <p className="text-white/80">
-                  Generate professional quotes and invoices with our automated system.
+                  Gain access to a diverse team of highly skilled professionals ready to deliver quality and dependability.
                 </p>
               </div>
             </div>
@@ -335,9 +335,21 @@ export default function AuthPage() {
                 <LockKeyhole className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-bold text-xl mb-1">Role-Based Access</h3>
+                <h3 className="font-bold text-xl mb-1">Cost Efficiency</h3>
                 <p className="text-white/80">
-                  Secure your platform with our comprehensive role-based permission system.
+                  Our subscription plans are designed specifically for small and medium-sized businesses, ensuring affordability with no hidden fees.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start">
+              <div className="bg-white/10 p-3 rounded-full mr-4">
+                <Tag className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-xl mb-1">Scalable Growth</h3>
+                <p className="text-white/80">
+                  Our flexible plans adapt to your business's evolving needs, empowering you at every stage of growth.
                 </p>
               </div>
             </div>
