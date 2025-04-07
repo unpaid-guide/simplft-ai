@@ -605,7 +605,7 @@ export default function ExpensesManagement() {
                           <FormLabel>Category*</FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            defaultValue={field.value}
+                            value={field.value || "other"}
                           >
                             <FormControl>
                               <SelectTrigger>

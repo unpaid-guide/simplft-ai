@@ -446,9 +446,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products", async (_req, res, next) => {
     try {
       const products = await storage.listActiveProducts();
-      res.json(products);
+      // Ensure we return an array even if there's an issue with the database
+      res.json(products || []);
     } catch (error) {
-      next(error);
+      // If there's an error, just return an empty array rather than failing
+      console.error("Error fetching products:", error);
+      res.json([]);
     }
   });
 

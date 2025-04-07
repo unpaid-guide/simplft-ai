@@ -607,7 +607,7 @@ export default function ProductsManagement() {
                               <FormLabel>VAT Rate*</FormLabel>
                               <Select
                                 onValueChange={field.onChange}
-                                defaultValue={field.value}
+                                value={field.value || "standard"}
                               >
                                 <FormControl>
                                   <SelectTrigger>

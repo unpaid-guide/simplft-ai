@@ -320,7 +320,7 @@ export default function AccountsManagement() {
                         <FormItem>
                           <FormLabel>Account Number</FormLabel>
                           <FormControl>
-                            <Input placeholder="Optional account number" {...field} />
+                            <Input placeholder="Optional account number" value={field.value || ""} onChange={field.onChange} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -337,7 +337,8 @@ export default function AccountsManagement() {
                             <Textarea
                               placeholder="Describe the account purpose"
                               className="min-h-[80px]"
-                              {...field}
+                              value={field.value || ""}
+                              onChange={field.onChange}
                             />
                           </FormControl>
                           <FormMessage />
