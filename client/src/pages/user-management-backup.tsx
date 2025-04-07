@@ -446,13 +446,13 @@ export default function UserManagementPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {pendingUsers.map((pendingUser: User) => (
-                            <TableRow key={pendingUser.id}>
-                              <TableCell>{pendingUser.name}</TableCell>
-                              <TableCell>{pendingUser.email}</TableCell>
-                              <TableCell>{pendingUser.company || "-"}</TableCell>
-                              <TableCell>{pendingUser.phone || "-"}</TableCell>
-                              <TableCell>{new Date(pendingUser.created_at).toLocaleDateString()}</TableCell>
+                          {pendingUsers.map((user: User) => (
+                            <TableRow key={user.id}>
+                              <TableCell>{user.name}</TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>{user.company || "-"}</TableCell>
+                              <TableCell>{user.phone || "-"}</TableCell>
+                              <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-2">
                                   <Dialog>
@@ -470,12 +470,12 @@ export default function UserManagementPage() {
                                         </DialogDescription>
                                       </DialogHeader>
                                       <div className="py-4">
-                                        <Label htmlFor={`approve-role-${pendingUser.id}`}>User Role</Label>
+                                        <Label htmlFor={`approve-role-${user.id}`}>User Role</Label>
                                         <Select
                                           defaultValue="customer"
                                           onValueChange={(value) => {
                                             approveUserMutation.mutate({
-                                              userId: pendingUser.id,
+                                              userId: user.id,
                                               role: value
                                             });
                                           }}
@@ -493,7 +493,7 @@ export default function UserManagementPage() {
                                       </div>
                                       <DialogFooter>
                                         <Button
-                                          onClick={() => approveUserMutation.mutate({ userId: pendingUser.id })}
+                                          onClick={() => approveUserMutation.mutate({ userId: user.id })}
                                           disabled={approveUserMutation.isPending}
                                         >
                                           {approveUserMutation.isPending ? (
@@ -513,7 +513,7 @@ export default function UserManagementPage() {
                                     variant="destructive"
                                     size="sm"
                                     onClick={() => suspendUserMutation.mutate({
-                                      userId: pendingUser.id,
+                                      userId: user.id,
                                       reason: "Registration rejected by admin"
                                     })}
                                     disabled={suspendUserMutation.isPending}
@@ -568,17 +568,17 @@ export default function UserManagementPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {allUsers.map((listUser: User) => (
-                            <TableRow key={listUser.id}>
-                              <TableCell>{listUser.name}</TableCell>
-                              <TableCell>{listUser.email}</TableCell>
-                              <TableCell>{renderRoleBadge(listUser.role)}</TableCell>
-                              <TableCell>{renderStatusBadge(listUser.status)}</TableCell>
-                              <TableCell>{listUser.company || "-"}</TableCell>
+                          {allUsers.map((user: User) => (
+                            <TableRow key={user.id}>
+                              <TableCell>{user.name}</TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>{renderRoleBadge(user.role)}</TableCell>
+                              <TableCell>{renderStatusBadge(user.status)}</TableCell>
+                              <TableCell>{user.company || "-"}</TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-2">
-                                  {/* Change Role Button */}
-                                  {user && listUser.id !== user.id && (
+                                  {/* Change Role Button - Only show if not the current user */}
+                                  {user.id !== user?.id && (
                                     <Dialog>
                                       <DialogTrigger asChild>
                                         <Button variant="outline" size="sm">
@@ -589,21 +589,21 @@ export default function UserManagementPage() {
                                         <DialogHeader>
                                           <DialogTitle>Update User Role</DialogTitle>
                                           <DialogDescription>
-                                            Change the role for {listUser.name}
+                                            Change the role for {user.name}
                                           </DialogDescription>
                                         </DialogHeader>
                                         <div className="py-4">
-                                          <Label htmlFor={`role-${listUser.id}`}>Select New Role</Label>
+                                          <Label htmlFor={`role-${user.id}`}>Select New Role</Label>
                                           <Select
-                                            defaultValue={listUser.role}
+                                            defaultValue={user.role}
                                             onValueChange={(value) => {
                                               changeRoleMutation.mutate({
-                                                userId: listUser.id,
+                                                userId: user.id,
                                                 role: value
                                               });
                                             }}
                                           >
-                                            <SelectTrigger id={`role-${listUser.id}`} className="mt-1">
+                                            <SelectTrigger id={`role-${user.id}`} className="mt-1">
                                               <SelectValue placeholder="Select role" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -629,23 +629,23 @@ export default function UserManagementPage() {
                                       <DialogHeader>
                                         <DialogTitle>Reset Password</DialogTitle>
                                         <DialogDescription>
-                                          Set a new password for {listUser.name}
+                                          Set a new password for {user.name}
                                         </DialogDescription>
                                       </DialogHeader>
                                       <div className="py-4">
-                                        <Label htmlFor={`new-password-${listUser.id}`}>New Password</Label>
+                                        <Label htmlFor={`new-password-${user.id}`}>New Password</Label>
                                         <Input
-                                          id={`new-password-${listUser.id}`}
+                                          id={`new-password-${user.id}`}
                                           type="password"
                                           className="mt-2"
                                         />
                                       </div>
                                       <DialogFooter>
                                         <Button onClick={() => {
-                                          const passwordInput = document.getElementById(`new-password-${listUser.id}`) as HTMLInputElement;
+                                          const passwordInput = document.getElementById(`new-password-${user.id}`) as HTMLInputElement;
                                           if (passwordInput && passwordInput.value) {
                                             resetPasswordMutation.mutate({
-                                              userId: listUser.id,
+                                              userId: user.id,
                                               newPassword: passwordInput.value
                                             });
                                           } else {
@@ -663,33 +663,33 @@ export default function UserManagementPage() {
                                   </Dialog>
                                   
                                   {/* Suspend/Activate Button */}
-                                  {user && listUser.id !== user.id && (
+                                  {user.id !== user?.id && (
                                     <Dialog>
                                       <DialogTrigger asChild>
                                         <Button 
-                                          variant={listUser.status === "active" ? "destructive" : "outline"}
+                                          variant={user.status === "active" ? "destructive" : "outline"}
                                           size="sm"
                                         >
-                                          {listUser.status === "active" ? "Suspend" : "Activate"}
+                                          {user.status === "active" ? "Suspend" : "Activate"}
                                         </Button>
                                       </DialogTrigger>
                                       <DialogContent>
                                         <DialogHeader>
                                           <DialogTitle>
-                                            {listUser.status === "active" ? "Suspend User" : "Activate User"}
+                                            {user.status === "active" ? "Suspend User" : "Activate User"}
                                           </DialogTitle>
                                           <DialogDescription>
-                                            {listUser.status === "active" 
+                                            {user.status === "active" 
                                               ? "This will suspend the user and prevent them from logging in."
                                               : "This will reactivate the suspended user account."
                                             }
                                           </DialogDescription>
                                         </DialogHeader>
-                                        {listUser.status === "active" && (
+                                        {user.status === "active" && (
                                           <div className="py-4">
-                                            <Label htmlFor={`suspend-reason-${listUser.id}`}>Reason</Label>
+                                            <Label htmlFor={`suspend-reason-${user.id}`}>Reason</Label>
                                             <Input
-                                              id={`suspend-reason-${listUser.id}`}
+                                              id={`suspend-reason-${user.id}`}
                                               placeholder="Reason for suspension"
                                               className="mt-2"
                                             />
@@ -697,22 +697,22 @@ export default function UserManagementPage() {
                                         )}
                                         <DialogFooter>
                                           <Button 
-                                            variant={listUser.status === "active" ? "destructive" : "default"}
+                                            variant={user.status === "active" ? "destructive" : "default"}
                                             onClick={() => {
-                                              if (listUser.status === "active") {
-                                                const reasonInput = document.getElementById(`suspend-reason-${listUser.id}`) as HTMLInputElement;
+                                              if (user.status === "active") {
+                                                const reasonInput = document.getElementById(`suspend-reason-${user.id}`) as HTMLInputElement;
                                                 suspendUserMutation.mutate({
-                                                  userId: listUser.id,
+                                                  userId: user.id,
                                                   reason: reasonInput?.value
                                                 });
                                               } else {
                                                 approveUserMutation.mutate({
-                                                  userId: listUser.id
+                                                  userId: user.id
                                                 });
                                               }
                                             }}
                                           >
-                                            {listUser.status === "active" ? "Suspend User" : "Activate User"}
+                                            {user.status === "active" ? "Suspend User" : "Activate User"}
                                           </Button>
                                         </DialogFooter>
                                       </DialogContent>
