@@ -241,6 +241,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {/* Notification badge */}
                 <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
               </div>
+              
+              {/* Logout button in header */}
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="ml-4 flex items-center text-sm font-medium text-gray-600"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span className="hidden md:inline">Sign out</span>
+              </Button>
             </div>
           </div>
         </div>
