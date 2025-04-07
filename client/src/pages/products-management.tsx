@@ -508,7 +508,7 @@ export default function ProductsManagement() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="">None</SelectItem>
+                                  <SelectItem value="none">None</SelectItem>
                                   {categories.map((category) => (
                                     <SelectItem 
                                       key={category.id} 
@@ -842,7 +842,7 @@ export default function ProductsManagement() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="">None (Top Level)</SelectItem>
+                                  <SelectItem value="none">None (Top Level)</SelectItem>
                                   {categories.map((category) => (
                                     // Don't allow a category to be its own parent
                                     // and don't allow circular references

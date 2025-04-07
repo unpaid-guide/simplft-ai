@@ -41,7 +41,9 @@ function Router() {
       />
       <ProtectedRoute path="/subscriptions" component={Subscriptions} />
       <ProtectedRoute path="/invoices" component={Invoices} />
+      <ProtectedRoute path="/invoices/create" component={Invoices} />
       <ProtectedRoute path="/quotes" component={Quotes} />
+      <ProtectedRoute path="/quotes/create" component={Quotes} />
       <ProtectedRoute 
         path="/discount-approvals" 
         component={DiscountApprovals} 

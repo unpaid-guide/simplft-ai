@@ -28,13 +28,17 @@ import {
   Coins, 
   ArrowRight, 
   AlertCircle, 
-  Loader2 
+  Loader2,
+  FileText
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 // Make sure to call loadStripe outside of a component's render to avoid
 // recreating the Stripe object on every render
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
+// Mock Stripe Promise for development
+const stripePromise = null;
+// We'll re-enable this when Stripe keys are available
+// const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
 
 // Payment form component
 const CheckoutForm = ({ total, invoiceId }: { total: number, invoiceId?: number }) => {
@@ -244,30 +248,28 @@ export default function Checkout() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {clientSecret ? (
-                    <Elements
-                      stripe={stripePromise}
-                      options={{
-                        clientSecret,
-                        appearance: {
-                          theme: "stripe",
-                          variables: {
-                            colorPrimary: "#3B82F6",
-                            borderRadius: "4px",
-                          },
-                        },
-                      }}
-                    >
-                      <CheckoutForm 
-                        total={amount} 
-                        invoiceId={invoiceId ? parseInt(invoiceId) : undefined} 
-                      />
-                    </Elements>
-                  ) : (
-                    <div className="flex items-center justify-center h-60">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <div className="p-6 border rounded-md bg-blue-50 text-center">
+                    <CreditCard className="h-16 w-16 mx-auto mb-4 text-primary" />
+                    <h3 className="text-lg font-medium mb-2">Payment System Disabled</h3>
+                    <p className="text-gray-600 mb-4">
+                      The payment system is currently disabled. Payments will be processed manually.
+                    </p>
+                    <div className="mt-4">
+                      <Button variant="outline" className="w-full mb-2" onClick={() => window.history.back()}>
+                        Go Back
+                      </Button>
+                      {invoiceId && (
+                        <p className="text-sm text-gray-500 mt-2">
+                          Invoice #{invoiceId} - Total: ${(amount / 100).toFixed(2)}
+                        </p>
+                      )}
+                      {planId && (
+                        <p className="text-sm text-gray-500 mt-2">
+                          Plan: {plan?.name} - ${(amount / 100).toFixed(2)}/month
+                        </p>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             </div>
