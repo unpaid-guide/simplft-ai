@@ -22,7 +22,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Login form schema
 const loginSchema = z.object({
-  username: z.string().min(1, "Email/Username is required"),
+  username: z.string().email("Please enter a valid email"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -31,8 +31,8 @@ const registerSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(1, "Name is required"),
-  company: z.string().optional(),
-  phone: z.string().optional(),
+  company: z.string().min(1, "Company name is required"),
+  phone: z.string().min(1, "Phone number is required"),
 });
 
 export default function AuthPage() {
@@ -129,9 +129,9 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter your username" {...field} />
+                              <Input placeholder="Enter your email" type="email" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -237,7 +237,7 @@ export default function AuthPage() {
                           name="company"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Company (Optional)</FormLabel>
+                              <FormLabel>Company</FormLabel>
                               <FormControl>
                                 <Input placeholder="Enter your company name" {...field} />
                               </FormControl>
@@ -250,7 +250,7 @@ export default function AuthPage() {
                           name="phone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Phone Number (Optional)</FormLabel>
+                              <FormLabel>Phone Number</FormLabel>
                               <FormControl>
                                 <Input placeholder="Enter your phone number" {...field} />
                               </FormControl>
