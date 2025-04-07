@@ -103,9 +103,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center">
             <div className="w-8 h-8 mr-2 rounded-md bg-primary flex items-center justify-center text-white font-bold">
-              T
+              S
             </div>
-            <span className="text-lg font-semibold text-gray-800">TokenSaaS</span>
+            <span className="text-lg font-semibold text-gray-800">Simplft</span>
           </div>
           <Button 
             variant="ghost" 
@@ -142,9 +142,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-white lg:pt-5 lg:pb-4">
         <div className="flex items-center justify-center">
           <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center text-white font-bold text-xl">
-            T
+            S
           </div>
-          <span className="text-xl font-semibold text-gray-800 ml-2">TokenSaaS</span>
+          <span className="text-xl font-semibold text-gray-800 ml-2">Simplft</span>
         </div>
         
         <div className="mt-8 flex flex-col flex-1">
