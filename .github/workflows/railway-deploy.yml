@@ -17,14 +17,16 @@ jobs:
         with:
           node-version: 18
 
-      - name: 🧱 Install Dependencies
+      - name: 🧱 Install dependencies
         run: npm install
 
-      - name: 🛠 Build Project
+      - name: 🛠 Build project
         run: npm run build
 
+      - name: 📦 Install Railway CLI
+        run: npm install -g railway
+
       - name: 🚀 Deploy to Railway
-        uses: railwayapp/cli-action@v1
-        with:
-          railwayToken: ${{ secrets.RAILWAY_TOKEN }}
-          projectId: ${{ secrets.RAILWAY_PROJECT_ID }}
+        run: railway up --service=simplft-ai --no-interactive
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
