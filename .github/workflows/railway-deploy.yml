@@ -1,0 +1,25 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v3
+
+      - name: 🧱 Install Dependencies
+        run: npm install
+
+      - name: 🛠 Build Project
+        run: npm run build
+
+      - name: 🚀 Deploy to Railway
+        uses: railwayapp/railway-up@v2
+        with:
+          railwayToken: ${{ secrets.RAILWAY_TOKEN }}
