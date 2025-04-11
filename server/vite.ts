@@ -78,7 +78,7 @@ export function serveStatic(app: Express) {
   app.use(express.static(distPath));
 
   // fallback for client-side routing (e.g., React Router)
-  app.use("*", (_req, res) => {
+ app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
